@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Yoga Sequence Builder - Step 1</title>
+  <title>Yoga Sequence Builder</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -194,6 +194,16 @@
       flex: 1;
       min-width: 150px;
     }
+    
+    /* Status bar */
+    .status-bar {
+      background-color: #f0f0f0;
+      padding: 10px 15px;
+      border-radius: 4px;
+      margin-bottom: 15px;
+      display: flex;
+      justify-content: space-between;
+    }
   </style>
 </head>
 <body>
@@ -211,6 +221,13 @@
       <div class="step active" id="step-0" onclick="showStep(0)">Sequence Details</div>
       <div class="step" id="step-1" onclick="showStep(1)">Add Poses</div>
       <div class="step" id="step-2" onclick="showStep(2)">Preview</div>
+    </div>
+
+    <!-- Status Bar -->
+    <div class="status-bar">
+      <div><strong>Poses:</strong> <span id="statsPoseCount">0</span></div>
+      <div><strong>Sections:</strong> <span id="statsSectionCount">1</span></div>
+      <div><strong>Duration:</strong> <span id="statsDuration">0:00</span></div>
     </div>
 
     <!-- Step 1: Sequence Details -->
@@ -517,6 +534,7 @@
       
       state.sections.push(newSection);
       renderSections();
+      updateStatsBar();
     }
     
     // Render all sections
@@ -568,6 +586,7 @@
       if (state.sections.length > 1) {
         state.sections = state.sections.filter(section => section.id !== sectionId);
         renderSections();
+        updateStatsBar();
       }
     }
     
@@ -715,6 +734,7 @@
           
           section.poses = [...section.poses, ...posesToAdd];
           renderSections();
+          updateStatsBar();
           closePoseSelectionDialog();
         }
       }
@@ -783,6 +803,8 @@
         }
         return section;
       });
+      
+      updateStatsBar();
     }
     
     // Remove a pose from a section
@@ -798,6 +820,7 @@
       });
       
       renderSections();
+      updateStatsBar();
     }
     
     // Move a pose up in the order
@@ -850,6 +873,21 @@
         
         renderSections();
       }
+    }
+    
+    // ---- Stats Bar Functions ----
+    // Update the stats bar
+    function updateStatsBar() {
+      // Count total poses
+      const totalPoses = state.sections.reduce((count, section) => count + section.poses.length, 0);
+      document.getElementById('statsPoseCount').textContent = totalPoses;
+      
+      // Count sections
+      document.getElementById('statsSectionCount').textContent = state.sections.length;
+      
+      // Calculate total duration
+      const totalDuration = calculateTotalDuration();
+      document.getElementById('statsDuration').textContent = formatTime(totalDuration);
     }
     
     // ---- Preview Functions ----
@@ -998,6 +1036,7 @@
     document.addEventListener('DOMContentLoaded', function() {
       // Render initial sections
       renderSections();
+      updateStatsBar();
       
       // Set up event listeners for pose selection dialog
       document.getElementById('poseSearchInput').addEventListener('input', filterPoses);
@@ -1006,249 +1045,15 @@
       document.getElementById('cancelPoseSelectionButton').addEventListener('click', closePoseSelectionDialog);
       document.getElementById('addSelectedPosesButton').addEventListener('click', addSelectedPosesToSection);
       
+      // Preview toggle button
+      document.getElementById('previewToggleButton').addEventListener('click', function() {
+        showStep(2); // Go directly to the preview step
+      });
+      
       // Save button
       document.getElementById('saveButton').addEventListener('click', saveSequence);
     });
   </script>
 </body>
-</html><!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Basic Yoga Sequence Builder</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 0;
-      background-color: #f5f5f5;
-    }
-    .container {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 20px;
-    }
-    .header {
-      background-color: #2e7d32;
-      color: white;
-      padding: 15px 20px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .button {
-      background-color: #2e7d32;
-      color: white;
-      border: none;
-      padding: 10px 15px;
-      border-radius: 4px;
-      cursor: pointer;
-      margin: 5px;
-    }
-    .button.secondary {
-      background-color: white;
-      color: #2e7d32;
-      border: 1px solid #2e7d32;
-    }
-    .button:disabled {
-      background-color: #cccccc;
-      color: #666666;
-      cursor: not-allowed;
-      border: none;
-    }
-    .paper {
-      background-color: white;
-      padding: 20px;
-      border-radius: 4px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-      margin-bottom: 20px;
-    }
-    .stepper {
-      display: flex;
-      justify-content: space-between;
-      margin: 20px 0;
-    }
-    .step {
-      flex: 1;
-      text-align: center;
-      padding: 10px;
-      cursor: pointer;
-    }
-    .step.active {
-      font-weight: bold;
-      border-bottom: 2px solid #2e7d32;
-    }
-    .hidden {
-      display: none !important;
-    }
-    .flex {
-      display: flex;
-    }
-    .space-between {
-      justify-content: space-between;
-    }
-    .mt-20 {
-      margin-top: 20px;
-    }
-  </style>
-</head>
-<body>
-  <div class="header">
-    <h1>Basic Yoga Sequence Builder</h1>
-    <div>
-      <button id="saveButton" class="button">Save</button>
-      <button id="previewToggleButton" class="button">Preview</button>
-    </div>
-  </div>
-
-  <div class="container">
-    <!-- Stepper -->
-    <div class="stepper">
-      <div class="step active" id="step-0" onclick="showStep(0)">Sequence Details</div>
-      <div class="step" id="step-1" onclick="showStep(1)">Add Poses</div>
-      <div class="step" id="step-2" onclick="showStep(2)">Preview</div>
-    </div>
-
-    <!-- Step 1: Sequence Details -->
-    <div id="step-0-content" class="paper">
-      <h2>Step 1: Sequence Details</h2>
-      <div>
-        <label for="sequenceName">Sequence Name</label>
-        <input type="text" id="sequenceName" placeholder="Enter sequence name" style="width: 100%; padding: 8px; margin: 8px 0;">
-      </div>
-      <div>
-        <label for="sequenceLevel">Difficulty Level</label>
-        <select id="sequenceLevel" style="width: 100%; padding: 8px; margin: 8px 0;">
-          <option value="">Select level</option>
-          <option value="Beginner">Beginner</option>
-          <option value="Intermediate">Intermediate</option>
-          <option value="Advanced">Advanced</option>
-        </select>
-      </div>
-      <div>
-        <label for="sequenceFocus">Focus Area</label>
-        <input type="text" id="sequenceFocus" placeholder="e.g., Back Strength, Flexibility, Balance" style="width: 100%; padding: 8px; margin: 8px 0;">
-      </div>
-      <div>
-        <label for="sequenceDescription">Description</label>
-        <textarea id="sequenceDescription" rows="4" placeholder="Describe your sequence" style="width: 100%; padding: 8px; margin: 8px 0;"></textarea>
-      </div>
-    </div>
-
-    <!-- Step 2: Add Poses -->
-    <div id="step-1-content" class="paper hidden">
-      <h2>Step 2: Add Poses</h2>
-      <p>This is where you'll add poses to your yoga sequence.</p>
-      <div>
-        <button class="button" onclick="alert('This would open the pose selection dialog')">+ Add Poses</button>
-      </div>
-      <div style="margin-top: 20px;">
-        <h3>Sample Poses</h3>
-        <ul>
-          <li>Mountain Pose - 30 seconds</li>
-          <li>Downward Dog - 45 seconds</li>
-          <li>Warrior I - 30 seconds</li>
-        </ul>
-      </div>
-    </div>
-
-    <!-- Step 3: Preview -->
-    <div id="step-2-content" class="paper hidden">
-      <h2>Step 3: Preview</h2>
-      <p>This is where you'll preview your completed sequence.</p>
-      <div style="margin-top: 20px;">
-        <h3>Sequence Summary</h3>
-        <div style="background-color: #f9f9f9; padding: 15px; border-radius: 4px;">
-          <h4 id="previewSequenceName">Untitled Sequence</h4>
-          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
-            <div><strong>Level:</strong> <span id="previewSequenceLevel">Not specified</span></div>
-            <div><strong>Focus:</strong> <span id="previewSequenceFocus">Not specified</span></div>
-            <div><strong>Duration:</strong> <span>1:45</span></div>
-          </div>
-          <p id="previewSequenceDescription">No description provided.</p>
-        </div>
-      </div>
-    </div>
-
-    <!-- Navigation Buttons -->
-    <div class="flex space-between mt-20">
-      <button id="prevButton" class="button secondary" onclick="prevStep()" disabled>Back</button>
-      <button id="nextButton" class="button" onclick="nextStep()">Next</button>
-    </div>
-  </div>
-
-  <script>
-    // Basic navigation functionality
-    let currentStep = 0;
-    
-    // Function to show a specific step
-    function showStep(step) {
-      // Hide all step contents
-      document.getElementById('step-0-content').classList.add('hidden');
-      document.getElementById('step-1-content').classList.add('hidden');
-      document.getElementById('step-2-content').classList.add('hidden');
-      
-      // Show the selected step
-      document.getElementById('step-' + step + '-content').classList.remove('hidden');
-      
-      // Update stepper UI
-      document.getElementById('step-0').classList.remove('active');
-      document.getElementById('step-1').classList.remove('active');
-      document.getElementById('step-2').classList.remove('active');
-      document.getElementById('step-' + step).classList.add('active');
-      
-      // Update navigation buttons
-      document.getElementById('prevButton').disabled = (step === 0);
-      document.getElementById('nextButton').disabled = (step === 2);
-      document.getElementById('nextButton').textContent = (step === 2) ? 'Finish' : 'Next';
-      
-      // Update current step
-      currentStep = step;
-      
-      // If we're showing the preview step, update the preview data
-      if (step === 2) {
-        updatePreview();
-      }
-    }
-    
-    // Function to go to the next step
-    function nextStep() {
-      if (currentStep < 2) {
-        showStep(currentStep + 1);
-      }
-    }
-    
-    // Function to go to the previous step
-    function prevStep() {
-      if (currentStep > 0) {
-        showStep(currentStep - 1);
-      }
-    }
-    
-    // Function to update the preview with data from the form
-    function updatePreview() {
-      const sequenceName = document.getElementById('sequenceName').value || 'Untitled Sequence';
-      const sequenceLevel = document.getElementById('sequenceLevel').value || 'Not specified';
-      const sequenceFocus = document.getElementById('sequenceFocus').value || 'Not specified';
-      const sequenceDescription = document.getElementById('sequenceDescription').value || 'No description provided.';
-      
-      document.getElementById('previewSequenceName').textContent = sequenceName;
-      document.getElementById('previewSequenceLevel').textContent = sequenceLevel;
-      document.getElementById('previewSequenceFocus').textContent = sequenceFocus;
-      document.getElementById('previewSequenceDescription').textContent = sequenceDescription;
-    }
-    
-    // Preview toggle button
-    document.getElementById('previewToggleButton').addEventListener('click', function() {
-      showStep(2); // Go directly to preview step
-    });
-    
-    // Save button
-    document.getElementById('saveButton').addEventListener('click', function() {
-      const sequenceName = document.getElementById('sequenceName').value || 'Untitled Sequence';
-      alert('Sequence "' + sequenceName + '" saved successfully!');
-    });
-  </script>
-</body>
 </html>
+                      
